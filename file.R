@@ -1,107 +1,72 @@
+#
+# Data Mining 2014
+# Assignment 1: Classification Trees
+#
+# Jarno Le Conte (?)
+# Mathijs Baaijens (3542068)
+#
 
 tree.grow <- function (x, y, nmin, minleaf) 
 {
+  # Grows a classification tree based on the input training data.
+  #
+  # Args:
+  #   x: Training data matrix.
+  #   y: Training data classs labels.
+  #   nmin : Minimum number of observations that a node must contain at least,
+  #          for it to be allowed to be split.
+  #   minleaf : s the minimum number of observations required for a leaf node.
+  #
+  # Returns:
+  #   Classification tree based on input training data.
+  
   if (length(y) == 1 || impurity(y) == 0) {
+    #TODO : improve this
     y[1]  
   } else {
+      
+    # Find the column and attribute value for the optimal split.
+    split <- optimal.split (x, y)
     
+    smaller <- x[[split$attr]] <= split$val
+    larger <- x[[split$attr]] > split$val
     
-    split <- dataSplit (x, y)
+    left <- tree.grow(x[smaller,], y[smaller], nmin, minleaf)
+    right <- tree.grow(x[larger,], y[larger], nmin, minleaf)
     
-    #cat("Best data split: ", split, "\n")
-    
-    splitcol <- split[1]
-    splitval <- split[3]
-    
-    splitdat <- x[[splitcol]]  
-    smaller <- splitdat <= splitval
-    larger <- splitdat > splitval
-    
-    #    cat(split)
-    left <- x[smaller,]
-    right <- x[larger,]
-    
-    yleft <- y[smaller]
-    yright <- y[larger]
-    
-    #rownames(left) <- NULL
-    #rownames(right) <- NULL    
-    
-    #cat("left: ", data.frame(left), "\n")
-    #cat("right: ", data.frame(right), "\n")
-    
-    #cat("yleft: ", yleft, "\n")
-    #cat("yright: ", yright, "\n")
-
-    
-    cat ("Stepping into recursion")
-    #cat (left)
-    #cat (yleft)
-    
-    
-    
-    l <- tree.grow(left, yleft, nmin, minleaf)
-    r <- tree.grow(right, yright, nmin, minleaf)
-    
-    list(split=c(splitcol, splitval), left=l, right=r)
-    
-    #((1,1), (1,1))
-    #list(left = left, right = right, yleft = yleft, yright = yright)
-    
-  }
-  
-  #c(left,yleft,right,yright)
-  
-  #treeleft <- tree.grow(left, )
-  
-  #Filter(x, x[,split[1]] < split[3])
+    list(attr = split$attr, val = split$val, left = left, right = right)    
+  }  
 }
 
-tree.classify <- function (tree, cases) {
-  as.vector(apply(cases, 1, function(x) { classifyCase(tree, x)}))
+tree.classify <- function (x, tr) {
+  # Predicts class labels for the input data based on the input classification
+  # tree.
+  #
+  # Args:
+  #   x: Data matrix containing the attribute values for the cases to classify.  
+  #   tr: Classification tree to use to predict class labels.
+  #
+  # Returns:
+  #   Vector of the predicted class labels for the input data.
+  
+  as.vector(apply(x, 1, function(row) {
+    tree.classify.case(tr, row)
+  }))
 }
 
-classifyCase <- function (tree, x) {
-  if (typeof(tree) == "integer") {
-    tree
+tree.classify.case <- function(tr, x) { 
+  if (typeof(tr) == "integer") {
+    tr
   } else {
-    col <- tree$split[1]
-    val <- tree$split[2]
-    if (x[col] <= val) {
-      classifyCase(tree$left, x)
+    if (x[tr$attr] <= tr$val) {
+      tree.classify.case(tr$left, x)
     } else {
-      classifyCase(tree$right, x)
+      tree.classify.case(tr$right, x)
     }
   }  
 }
 
-#tree.classify <- function (tree, x) {
-#  
-#  if (typeof(tree) == "integer") {
-#    rep(tree, nrow(x))
-#  } else {
-#  
-#    col <- tree$split[1]
-#    val <- tree$split[2]
-#  
-#    tol <- x[col] <= val
-#    tor <- x[col] > val
-#    
-#    l <- x[tol,]
-#    r <- x[tor,]
-#  
-#    c(tree.classify (tree$left, l), tree.classify (tree$right, r))
-#  }
-  
-  
-  #resl <- 
-  #print(l)
-  #print(r)
-#}
-
-
-
-dataSplit <- function (data, y) 
+optimal.split <- function (data, y) 
 {
  
   #print(typeof(data))
@@ -119,49 +84,30 @@ dataSplit <- function (data, y)
       #c(0,0)
     }
   })
-  
-  #print(typeof(data))
-  #print(typeof(y))
-  #print(typeof(reducs))
-  
-  
+    
   # find best attribute split
   red <- max(reducs[1,])
   attr <- which(reducs[1,] == red)
   split <- reducs[2,attr]
   
   # return best split
-  c(attr, red, split)
+  #c(attr, red, split)
+  list(attr = attr[1], red = red[1], val = split[1])
 }
 
 bestSplit <- function (x, y) 
-{
-  #cat('xa: ', x, "\n")
-  #cat('ya: ', y, "\n")
-  
+{  
   # sort input
   y <- sortBy(y, x)
   x <- sort(x) 
-  
-  #cat('x1: ', x, "\n")
-  #cat('y1: ', y, "\n")
-  
+    
   # splits to consider
   splits <- splits(x)
-  #cat("splits: ", splits, "\n")
-  
-  #cat('x2: ', x, "\n")
-  #cat('y2: ', y, "\n")
-  
+
   # calculate impurity reduction for each split
   rds <- sapply(splits, function (split) {
-    ## XXX  conflict: x and y have changed here
-    #cat('x3: ', x, "\n")
-    #cat('y3: ', y, "\n")
     impurityReduction(x, y, split)
   })
-  
-  #cat("rds: ", rds, "\n")
   
   # return the best split value
   splits[rds == max(rds)][1]
@@ -189,7 +135,6 @@ impurityReduction <- function (x, y, split)
 
 splits <- function(v) {
   v <- sort(unique(v))
-  #cat("array: ", v, "\n")
   xs <- v[-length(v)] # init
   ys <- v[-1]         # tail
   zs <- ys + xs       # zipWith (+) (tail y) (init y)
