@@ -20,7 +20,7 @@ tree.grow <- function (x, y, nmin, minleaf)
   # Returns:
   #   Classification tree based on input training data.
   
-  if (length(y) == 1 || impurity(y) == 0) {
+  if (length(y) < nmin || impurity(y) == 0) {
     #TODO : improve this
     y[1]  
   } else {
@@ -36,7 +36,7 @@ tree.grow <- function (x, y, nmin, minleaf)
     left <- tree.grow(x[smaller,], y[smaller], nmin, minleaf)
     right <- tree.grow(x[larger,], y[larger], nmin, minleaf)
     
-    # Return the classification tree
+    # Return the classification tree.
     list(attr = split$attr, val = split$val, left = left, right = right)    
   }  
 }
