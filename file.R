@@ -28,12 +28,15 @@ tree.grow <- function (x, y, nmin, minleaf)
     # Find the column and attribute value for the optimal split.
     split <- optimal.split (x, y)
     
+    # Select the rows classified in the left and right sides of the tree.
     smaller <- x[[split$attr]] <= split$val
     larger <- x[[split$attr]] > split$val
     
+    # Build the left and right branches of the classification tree.
     left <- tree.grow(x[smaller,], y[smaller], nmin, minleaf)
     right <- tree.grow(x[larger,], y[larger], nmin, minleaf)
     
+    # Return the classification tree
     list(attr = split$attr, val = split$val, left = left, right = right)    
   }  
 }
@@ -69,7 +72,6 @@ tree.classify.case <- function(tr, x) {
 optimal.split <- function (data, y) 
 {
  
-  #print(typeof(data))
   # calculate best split for every column
   # in order to see which attribute split
   # leads to highest impurity reduction.
@@ -77,11 +79,9 @@ optimal.split <- function (data, y)
     if (length(unique(x)) == 1) {
       c(0,0)
     } else {
-      split <- bestSplit(x, y)  ### x incorrect here
-      #cat("bestSplit: ", split, "\n")
+      split <- bestSplit(x, y)
       red <- impurityReduction(x, y, split)
       c(red, split)
-      #c(0,0)
     }
   })
     
@@ -91,7 +91,6 @@ optimal.split <- function (data, y)
   split <- reducs[2,attr]
   
   # return best split
-  #c(attr, red, split)
   list(attr = attr[1], red = red[1], val = split[1])
 }
 
@@ -149,8 +148,6 @@ frac <- function (v)
 
 sortBy <- function (x, y) 
 {
-  #cat('x0: ', x, "\n")
-  #cat('y0: ', y, "\n")
   x[sort.int(y, index.return = TRUE)$ix]
 }
 
