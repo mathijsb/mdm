@@ -21,11 +21,11 @@ tree.grow <- function (x, y, nmin, minleaf)
   #   Classification tree based on input training data.
   
   if (length(y) < nmin || impurity(y) == 0) {
-    # Return classification label with highest probability within this leaf 
-    # TODO: Verify if this is correct
-    freqTable <- table(y)
-    label <- as.integer(names(which.max(freqTable)))
-    label
+    
+    # Leaf node.
+    # Determine most probable class label from all observations in this leaf.
+    determine.classLabel(y)
+    
   } else {
       
     # Find the column and attribute value for the optimal split.
@@ -35,12 +35,21 @@ tree.grow <- function (x, y, nmin, minleaf)
     smaller <- x[[split$attr]] <= split$val
     larger <- x[[split$attr]] > split$val
     
-    # Build the left and right branches of the classification tree.
-    left <- tree.grow(x[smaller,], y[smaller], nmin, minleaf)
-    right <- tree.grow(x[larger,], y[larger], nmin, minleaf)
+    if (length(y[smaller]) < minleaf || length(y[larger]) < minleaf) {
+      
+      # Don't satisfy the minleaf requirement, which means this node becomes a leaf.
+      # Determine most probable class label from all observations in this leaf.
+      determine.classLabel(y)
+      
+    } else {
     
-    # Return the classification tree.
-    list(attr = split$attr, val = split$val, left = left, right = right)    
+      # Build the left and right branches of the classification tree.
+      left <- tree.grow(x[smaller,], y[smaller], nmin, minleaf)
+      right <- tree.grow(x[larger,], y[larger], nmin, minleaf)
+      
+      # Return the classification tree.
+      list(attr = split$attr, val = split$val, left = left, right = right)     
+    }
   }  
 }
 
@@ -155,4 +164,9 @@ sortBy <- function (x, y)
 }
 
 
+# Return classification label with highest probability
+determine.classLabel = function(classLabels) {
+  freqTable <- table(classLabels)
+  as.integer(names(which.max(freqTable)))
+}
 
