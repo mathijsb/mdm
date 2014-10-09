@@ -2,7 +2,7 @@
 # Data Mining 2014
 # Assignment 1: Classification Trees
 #
-# Jarno Le Conte (?)
+# Jarno Le Conte (3725154)
 # Mathijs Baaijens (3542068)
 #
 
@@ -21,8 +21,11 @@ tree.grow <- function (x, y, nmin, minleaf)
   #   Classification tree based on input training data.
   
   if (length(y) < nmin || impurity(y) == 0) {
-    #TODO : improve this
-    y[1]  
+    # Return classification label with highest probability within this leaf 
+    # TODO: Verify if this is correct
+    freqTable <- table(y)
+    label <- as.integer(names(which.max(freqTable)))
+    label
   } else {
       
     # Find the column and attribute value for the optimal split.
