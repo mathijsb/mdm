@@ -13,7 +13,7 @@ credit <- function() {
 
   credit.tree <- tree.grow(credit.x, credit.y, 1, 1)    # build tree
   credit.class <- tree.classify(credit.x, credit.tree)  # predict / classification
-  credit.confusion <- table(credit.class, credit.y)     # confusion table (correct)
+  credit.confusion <- confusionTable(credit.class, credit.y) # confusion table (correct)
   credit.error <- errorRate(credit.confusion)
   
   cat("confusion table:\n", credit.confusion, "\n")
@@ -29,7 +29,7 @@ pima <- function() {
 
   pima.tree <- tree.grow(pima.x, pima.y, 20, 5)   # build tree
   pima.class <- tree.classify(pima.x, pima.tree)  # predict / classification
-  pima.confusion <- table(pima.class, pima.y)     # confusion table (correct)
+  pima.confusion <- confusionTable(pima.class, pima.y)  # confusion table (correct)
   pima.error <- errorRate(pima.confusion)
   
   cat("confusion table:\n", pima.confusion, "\n")
@@ -39,31 +39,31 @@ pima <- function() {
 
 
 ###
-# IonoSphere dataset
-# algorithm to find best parameters for ionosphere
-# First you have to generate data sets with iono.generate, once!
+# blood dataset
+# algorithm to find best parameters for blood dataset
+# First you have to generate data sets with dataset.generate, once!
 ###
 
-# generate 10 ionosphere datsets for training and testing, writing datasets to files
-iono.generate <- function() {
-  data <- read.csv(sprintf("%s/ionosphere.data", path), header = FALSE)
+# generate 10 blood sample datasets, split into training and testing sets, and writes to files on disk
+dataset.generate <- function() {
+  data <- read.csv(sprintf("%s/blood.txt", path), header = TRUE)
   sapply(c(1:10), function(i) {
-    data <- getTrainingAndTestSet(iono.data)
-    write.table(data$training, file = sprintf("%s/iono-training-%i.dat", path, i), row.names=FALSE, col.names=FALSE, sep=",")
-    write.table(data$test, file = sprintf("%s/iono-test-%i.dat", path, i), row.names=FALSE, col.names=FALSE, sep=",")
+    data <- getTrainingAndTestSet(data)
+    write.table(data$training, file = sprintf("%s/samples/blood-training-%i.dat", path, i), row.names=FALSE, col.names=TRUE, sep=",")
+    write.table(data$test, file = sprintf("%s/samples/blood-test-%i.dat", path, i), row.names=FALSE, col.names=TRUE, sep=",")
   }) 
 }
 
 # find optimal paramaters
-iono.run <- function() {
+dataset.run <- function() {
   nmin.range <- c(1:200)
-  minleaf.range <- c(1:100)
+  minleaf.range <- c(1:200)
   allCombinations <- expand.grid(nmin.range, minleaf.range)
-  sampleCombinations = c[sample(nrow(c),40),]
+  sampleCombinations = allCombinations[sample(nrow(allCombinations),100),]
   
-  # calculate errors for a subset of combination of parameters
+  # calculate errors for a subset of parameter combinations
   r <- data.frame(t(apply(sampleCombinations, 1, function(x){ 
-    err <- iono.paramTests(x[1], x[2])
+    err <- dataset.paramTests(x[1], x[2])
     c(nmin = x[1], minleaf = x[2], error = err)
   })))
   
@@ -72,27 +72,27 @@ iono.run <- function() {
 }
 
 # determine average error rate using given parameters on different samples
-iono.paramTests <- function(nmin, minleaf) {
-  errors <- sapply(c(1:5), function(i) {
-    training <- read.csv(sprintf("%s/iono-training-%i.dat", path, i))    
-    test <- data <- read.csv(sprintf("%s/iono-test-%i.dat", path, i))
-    iono.paramTest(nmin, minleaf, training, test)
+dataset.paramTests <- function(nmin, minleaf) {
+  errors <- sapply(c(1:10), function(i) {
+    training <- read.csv(sprintf("%s/samples/blood-training-%i.dat", path, i), header = TRUE)    
+    test <- data <- read.csv(sprintf("%s/samples/blood-test-%i.dat", path, i), header = TRUE)
+    dataset.paramTest(nmin, minleaf, training, test)
   });
   mean(errors) # avarage error 
 }
 
 # calculate error for given parameters using training to build a tree and test set for classifying
-iono.paramTest <- function(nmin, minleaf, training, test) {
-  training.x <- training[-35]  # without class labels
-  training.y <- training[,35]  # vector of class labels only
-  test.x <- test[-35]  # without class labels
-  test.y <- test[,35]  # vector of class labels only
+dataset.paramTest <- function(nmin, minleaf, training, test) {
+  training.x <- training[-5]  # without class labels
+  training.y <- training[,5]  # vector of class labels only
+  test.x <- test[-5]  # without class labels
+  test.y <- test[,5]  # vector of class labels only
   
   tr <- tree.grow(training.x, training.y, nmin, minleaf)   # build tree
   test.classified <- tree.classify(test.x, tr)  # predict / classification
-  confusionTable <- table(test.classified, test.y)  # confusion table
+  confusion <- confusionTable(test.classified, test.y)  # confusion table
   
-  errorRate(confusionTable)
+  errorRate(confusion)
 }
 
 
@@ -112,6 +112,11 @@ getTrainingAndTestSet <- function(frame) {
 # shuffle rows of a data.frame
 shuffleRows = function(frame) {
   frame[sample(nrow(frame)),]
+}
+
+#create confusion table
+confusionTable <- function(classified, training) {
+  table(c(0,0,1,1,classified), c(0,1,0,1,training)) - 1 # force 2x2 matrix
 }
 
 # determine the error of a confusion table
