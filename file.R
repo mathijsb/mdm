@@ -2,7 +2,7 @@
 # Data Mining 2014
 # Assignment 1: Classification Trees
 #
-# Jarno Le Conte (?)
+# Jarno Le Conte (3725154)
 # Mathijs Baaijens (3542068)
 #
 
@@ -21,26 +21,29 @@ tree.grow <- function (x, y, nmin, minleaf)
   #   Classification tree based on input training data.
   
   if (length(y) < nmin || impurity(y) == 0) {
-    #TODO : improve this
-    y[1]  
+    
+    # Leaf node.
+    # Determine most probable class label from all observations in this leaf.
+    determine.classLabel(y)
+    
   } else {
       
     # Find the column and attribute value for the optimal split.
     split <- optimal.split (x, y, minleaf)
     
     if (is.null(split)) {
-      y[1]
+      determine.classLabel(y)
     } else {
-    # Select the rows classified in the left and right sides of the tree.
-    smaller <- x[[split$attr]] <= split$val
-    larger <- x[[split$attr]] > split$val
+      # Select the rows classified in the left and right sides of the tree.
+      smaller <- x[[split$attr]] <= split$val
+      larger <- x[[split$attr]] > split$val
     
-    # Build the left and right branches of the classification tree.
-    left <- tree.grow(x[smaller,], y[smaller], nmin, minleaf)
-    right <- tree.grow(x[larger,], y[larger], nmin, minleaf)
-    
-    # Return the classification tree.
-    list(attr = split$attr, val = split$val, left = left, right = right)    
+      # Build the left and right branches of the classification tree.
+      left <- tree.grow(x[smaller,], y[smaller], nmin, minleaf)
+      right <- tree.grow(x[larger,], y[larger], nmin, minleaf)
+      
+      # Return the classification tree.
+      list(attr = split$attr, val = split$val, left = left, right = right)     
     }
   }  
 }
@@ -178,4 +181,9 @@ sortBy <- function (x, y)
 }
 
 
+# Return classification label with highest probability
+determine.classLabel = function(classLabels) {
+  freqTable <- table(classLabels)
+  as.integer(names(which.max(freqTable)))
+}
 
