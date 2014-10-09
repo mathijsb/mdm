@@ -26,8 +26,11 @@ tree.grow <- function (x, y, nmin, minleaf)
   } else {
       
     # Find the column and attribute value for the optimal split.
-    split <- optimal.split (x, y)
+    split <- optimal.split (x, y, minleaf)
     
+    if (is.null(split)) {
+      y[1]
+    } else {
     # Select the rows classified in the left and right sides of the tree.
     smaller <- x[[split$attr]] <= split$val
     larger <- x[[split$attr]] > split$val
@@ -38,6 +41,7 @@ tree.grow <- function (x, y, nmin, minleaf)
     
     # Return the classification tree.
     list(attr = split$attr, val = split$val, left = left, right = right)    
+    }
   }  
 }
 
@@ -69,47 +73,66 @@ tree.classify.case <- function(tr, x) {
   }  
 }
 
-optimal.split <- function (data, y) 
+optimal.split <- function (data, y, minleaf) 
 {
  
   # calculate best split for every column
   # in order to see which attribute split
   # leads to highest impurity reduction.
   reducs <- apply(data, 2, function(x) {
-    if (length(unique(x)) == 1) {
-      c(0,0)
-    } else {
-      split <- bestSplit(x, y)
-      red <- impurityReduction(x, y, split)
-      c(red, split)
-    }
+    #if (length(unique(x)) == 1) {
+    #  c(0,0)
+    #} else {
+      #NULL
+      split <- bestSplit(x, y, minleaf)
+      if (!is.null(split)) {
+        split
+      } else {
+        c(0,0)
+      }
+      #cat(split)
+      #  red <- impurityReduction(x, y, split)
+      #  c(red, split)
+      #} else {
+      #  c(0,0)
+      #}
+    #}
   })
     
   # find best attribute split
   red <- max(reducs[1,])
-  attr <- which(reducs[1,] == red)
-  split <- reducs[2,attr]
+  if (red > 0.0) {
+    attr <- which(reducs[1,] == red)
+    split <- reducs[2,attr]
   
-  # return best split
-  list(attr = attr[1], red = red[1], val = split[1])
+    # return best split
+    list(attr = attr[1], red = red[1], val = split[1])
+  }
 }
 
-bestSplit <- function (x, y) 
+bestSplit <- function (x, y, minleaf) 
 {  
   # sort input
   y <- sortBy(y, x)
   x <- sort(x) 
     
   # splits to consider
-  splits <- splits(x)
+  splits <- splits(x, minleaf)
 
+  if (length(splits) == 0) {
+    #return()
+    #NA
+  } else {
+  
   # calculate impurity reduction for each split
   rds <- sapply(splits, function (split) {
     impurityReduction(x, y, split)
   })
   
-  # return the best split value
-  splits[rds == max(rds)][1]
+    # return the best split value
+    maxrds <- max(rds)
+    c(maxrds, splits[rds == maxrds][1])
+  }
 }
 
 impurity <- function (v) 
@@ -132,12 +155,15 @@ impurityReduction <- function (x, y, split)
   impurity(y) - pi_l*impur_l - pi_r*impur_r
 }
 
-splits <- function(v) {
-  v <- sort(unique(v))
-  xs <- v[-length(v)] # init
-  ys <- v[-1]         # tail
-  zs <- ys + xs       # zipWith (+) (tail y) (init y)
-  zs / 2              # map (/2) zs
+splits <- function(v, minleaf) {
+  if (minleaf <= length(v) / 2) {
+    v <- v[(minleaf):(length(v) - minleaf + 1)]
+    v <- sort(unique(v))
+    zs <- (v[-1] + v[-length(v)])
+    zs / 2
+  } else {
+    return(NULL)
+  }
 }
 
 frac <- function (v) 
