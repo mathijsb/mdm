@@ -177,12 +177,13 @@ find.split.values <- function(v, minleaf) {
   
   if (minleaf <= length(v) / 2) {
     
+    v <- sort(v)
+    
     # Drop the first and last 'minleaf' elements so that only splits that
     # respect 'minleaf' will be returned.
     v <- v[(minleaf):(length(v) - minleaf + 1)]
     
-    # Only consider splits between unique values.
-    v <- sort(unique(v))
+    v <- unique(v)
     
     # Calculate the mid-value for every possible split.
     zs <- (v[-1] + v[-length(v)])
