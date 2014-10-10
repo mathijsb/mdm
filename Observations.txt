@@ -1,0 +1,133 @@
+> training <- read.csv(sprintf("%s/samples/blood-training-%i.dat", path, 1), header = TRUE)    
+> test <- data <- read.csv(sprintf("%s/samples/blood-test-%i.dat", path, 1), header = TRUE)
+
+###
+### Tree with optimal parameters
+### nmin = [1,127]  minleaf = 48
+###
+
+> t <- tree.grow(training[-5], training[,5], 100, 48)
+> t
+
+
+Recency..months (Split 6.5)
+	
+	L: Frequency..times (split 4.5) 
+	
+		L: Time..months (split 12)
+
+		R: Time..months (split 46.5)
+
+
+ 	R: Time..months (split 63)
+	
+		L: Frequence..times (split 3.5)
+		
+			L: Recency..months (split 15)
+
+
+
+> c <- tree.classify(test[-5],t)
+> confusionTable(c, test[,5])
+   
+      0   1
+  0 160  32
+  1  12  20		
+
+> errorRate(confusionTable(c, test[,5]))
+
+	0.1964286		
+
+# additional notes:
+# nmin tussen 1-127 lijkt geen effect te hebben
+# vanaf nmin 128, wordt er één split minder gedaan waardoor alles cases 
+# worden geclassified als False. De error rate blijft echter gelijk.
+
+
+
+###
+### Tree with bad parameters because overfitting.
+### nmin = 1, minleaf = 1
+### Although this is only slightly more bad then the optimal one.
+###
+
+> t <- tree.grow(training[-5], training[,5], 1, 1)
+> c <- tree.classify(test[-5],t)
+> confusionTable(c, test[,5])
+   
+      0   1
+  0 142  38
+  1  30  14
+
+> errorRate(confusionTable(c, test[,5]))
+
+	0.3035714
+
+
+
+
+###
+### Another extreme example 
+### nmin = 523 (which means that there will be only 1 split)
+###
+
+> t <- tree.grow(training[-5], training[,5], 523, 1)
+> c <- tree.classify(test[-5],t)
+> confusionTable(c, test[,5])
+   
+      0   1
+  0 172  52
+  1   0   0
+
+> errorRate(confusionTable(c, test[,5]))
+
+	0.2321429
+
+> t
+
+Recency..months (split 6.5)
+
+
+
+###
+### In addition to the example above
+### we can show that other splits are not very useful
+### nmin = 128 (which now do perform multiple splits)
+### Still as bad as the example above
+###
+
+> t <- tree.grow(training[-5], training[,5], 128, 48)
+> c <- tree.classify(test[-5],t)
+> confusionTable(c, test[,5])
+   
+      0   1
+  0 172  52
+  1   0   0
+
+> errorRate(confusionTable(c, test[,5]))
+
+	0.2321429
+
+> t 
+
+Recency (split 6.5)
+	
+	L: Frequency (split 4.5)
+	
+		L: Time (split 17)
+
+	R: Time (split 63)
+
+		L: Frequency (3.5)
+
+			L: Recency (split 13.15)
+
+
+###
+### Conclusion
+###
+
+De split op 'Recency' is veel bepalend, want het brengt de error rate terug tot 0.2321429. De error rate kan nog verder worden verlaagd tot 0.1964286 als we splits uitvoeren op nauwkeurig gekozen attribute values. Die values hebben we gevonden met brute force. Echter de kans is groot dat dit leidt tot overfitting bij grotere datasets, want zoals hierboven ook wordt aangetoond verbeteren basale splits de classification niet.
+
+
+
